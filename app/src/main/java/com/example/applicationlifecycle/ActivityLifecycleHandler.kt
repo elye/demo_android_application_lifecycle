@@ -3,20 +3,22 @@ package com.example.applicationlifecycle
 import android.app.Activity
 import android.app.Application
 import android.os.Build
-
 import android.os.Bundle
-import android.util.Log
 
 /**
+ * Originally based of from
+ * https://www.klaasnotfound.com/2015/08/24/tracking-the-application-lifecycle-on-android/
+ * with the code sample from
+ * https://gist.github.com/klaasnotfound/e14adefddaf72b941ef4e4245edca7e4
+ * 
  * A convenience lifecycle handler that tracks whether the overall application is
  * started, in the foreground, in the background or stopped and ignores transitions
  * between individual activities.
  */
 class ActivityLifecycleHandler(private val listener: LifecycleListener?) :
     Application.ActivityLifecycleCallbacks {
-    /**
-     * Informs the listener about application lifecycle events.
-     */
+
+    // Informs the listener about application lifecycle events.
     interface LifecycleListener {
 
         // Called right after the application is created
