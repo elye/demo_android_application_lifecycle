@@ -2,10 +2,10 @@ package com.example.applicationlifecycle
 
 import android.app.Activity
 import android.app.Application
+import android.os.Build
 
 import android.os.Bundle
 import android.util.Log
-
 
 /**
  * A convenience lifecycle handler that tracks whether the overall application is
@@ -19,69 +19,65 @@ class ActivityLifecycleHandler(private val listener: LifecycleListener?) :
      */
     interface LifecycleListener {
 
-        /**
-         * Called right after the application is created
-         */
+        // Called right after the application is created
         fun onApplicationCreated(bundle: Bundle?)
 
-        /**
-         * Called right before the application is stopped.
-         */
+        // Called right before the application is stopped.
         fun onApplicationStopped()
 
-        /**
-         * Called right after the application has been started.
-         */
+        // Called right after the application has been started.
         fun onApplicationStarted()
 
-        /**
-         * Called when the application is paused (but still awake).
-         */
-        fun onApplicationPaused()
+        // Called when the application is paused (but still awake).
+        fun onApplicationPaused() {}
 
-        /**
-         * Called right after the application has been resumed (come to the foreground).
-         */
-        fun onApplicationResumed()
+        // Called right after the application has been resumed (come to the foreground).
+        fun onApplicationResumed() {}
 
+        // Called right after the application is stopped (for Android P and later)
+        // Called right before onStop or onPause (for before Android P)
+        // https://developer.android.com/reference/android/app/Activity#onSaveInstanceState(android.os.Bundle)
+        fun onApplicationSaveInstanceState(bundle: Bundle) { }
 
-        /**
-         * Called right after the application is stopped
-         */
-        fun onApplicationSaveInstanceState(bundle: Bundle)
+        // Called when the last activity is destroy
+        fun onApplicationDestroy() { }
     }
 
     private var started = 0
     private var resumed = 0
     private var transitionPossible = false
+    private var isChangingConfigurations = false
     override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
-        Log.d("Elisha", "onActivityCreated ${activity.localClassName}")
-        if (activity.isChangingConfigurations) return
-        if (started == 0) listener?.onApplicationCreated(bundle)
+        if (started == 0 && !isChangingConfigurations)
+            listener?.onApplicationCreated(bundle)
     }
+
     override fun onActivityStarted(activity: Activity) {
-        if (activity.isChangingConfigurations) return
-        if (started == 0) listener?.onApplicationStarted()
+        if (started == 0 && !isChangingConfigurations)
+            listener?.onApplicationStarted()
         started++
     }
 
     override fun onActivityResumed(activity: Activity) {
-        if (activity.isChangingConfigurations) return
-        if (resumed == 0 && !transitionPossible) listener?.onApplicationResumed()
+        if (resumed == 0 && !transitionPossible && !isChangingConfigurations)
+            listener?.onApplicationResumed()
+        if (isChangingConfigurations) isChangingConfigurations = false
         transitionPossible = false
         resumed++
     }
 
     override fun onActivityPaused(activity: Activity) {
-        if (activity.isChangingConfigurations) return
         transitionPossible = true
         resumed--
     }
 
     override fun onActivityStopped(activity: Activity) {
-        if (activity.isChangingConfigurations) return
-        if (started == 1) {
-            // We only know the application was paused when it's stopped (because transitions always pause activities)
+        if (activity.isChangingConfigurations) {
+            isChangingConfigurations = true
+        }
+        if (started == 1 && !activity.isChangingConfigurations) {
+            // We only know the application was paused when
+            // it's stopped (because transitions always pause activities)
             // http://developer.android.com/guide/components/activities.html#CoordinatingActivities
             if (transitionPossible && resumed == 0) listener?.onApplicationPaused()
             listener?.onApplicationStopped()
@@ -91,9 +87,21 @@ class ActivityLifecycleHandler(private val listener: LifecycleListener?) :
     }
 
     override fun onActivitySaveInstanceState(activity: Activity, bundle: Bundle) {
-        if (activity.isChangingConfigurations) return
-        if (started == 0) listener?.onApplicationSaveInstanceState(bundle)
+
+        // https://developer.android.com/reference/android/app/Activity#onSaveInstanceState(android.os.Bundle)
+        // If called, this method will occur after onStop() for applications targeting
+        // platforms starting with Build.VERSION_CODES.P.
+        // For applications targeting earlier platform versions this method will occur
+        // before onStop() and there are no guarantees about whether it will occur
+        // before or after onPause().
+        val checkCounter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) 0 else 1
+
+        if (started == checkCounter && !activity.isChangingConfigurations)
+            listener?.onApplicationSaveInstanceState(bundle)
     }
 
-    override fun onActivityDestroyed(activity: Activity) {}
+    override fun onActivityDestroyed(activity: Activity) {
+        if (started == 0 && !activity.isChangingConfigurations)
+            listener?.onApplicationDestroy()
+    }
 }
