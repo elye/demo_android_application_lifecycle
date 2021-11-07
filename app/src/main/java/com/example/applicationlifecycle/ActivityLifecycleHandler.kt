@@ -22,7 +22,7 @@ class ActivityLifecycleHandler(private val listener: LifecycleListener?) :
     interface LifecycleListener {
 
         // Called right after the application is created
-        fun onApplicationCreated(bundle: Bundle?) {}
+        fun onApplicationCreated(savedInstanceState: Bundle?) {}
 
         // Called right before the application is stopped.
         fun onApplicationStopped() {}
@@ -39,7 +39,7 @@ class ActivityLifecycleHandler(private val listener: LifecycleListener?) :
         // Called right after the application is stopped (for Android P and later)
         // Called right before onStop or onPause (for before Android P)
         // https://developer.android.com/reference/android/app/Activity#onSaveInstanceState(android.os.Bundle)
-        fun onApplicationSaveInstanceState(bundle: Bundle) { }
+        fun onApplicationSaveInstanceState(savedInstanceState: Bundle) { }
 
         // Called when the last activity is destroy
         fun onApplicationDestroy() { }
@@ -49,9 +49,9 @@ class ActivityLifecycleHandler(private val listener: LifecycleListener?) :
     private var resumed = 0
     private var transitionPossible = false
     private var isChangingConfigurations = false
-    override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
+    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         if (started == 0 && !isChangingConfigurations)
-            listener?.onApplicationCreated(bundle)
+            listener?.onApplicationCreated(savedInstanceState)
     }
 
     override fun onActivityStarted(activity: Activity) {
@@ -88,7 +88,7 @@ class ActivityLifecycleHandler(private val listener: LifecycleListener?) :
         started--
     }
 
-    override fun onActivitySaveInstanceState(activity: Activity, bundle: Bundle) {
+    override fun onActivitySaveInstanceState(activity: Activity, savedInstanceState: Bundle) {
 
         // https://developer.android.com/reference/android/app/Activity#onSaveInstanceState(android.os.Bundle)
         // If called, this method will occur after onStop() for applications targeting
@@ -99,7 +99,7 @@ class ActivityLifecycleHandler(private val listener: LifecycleListener?) :
         val checkCounter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) 0 else 1
 
         if (started == checkCounter && !activity.isChangingConfigurations)
-            listener?.onApplicationSaveInstanceState(bundle)
+            listener?.onApplicationSaveInstanceState(savedInstanceState)
     }
 
     override fun onActivityDestroyed(activity: Activity) {
