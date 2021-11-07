@@ -8,7 +8,6 @@ import android.widget.TextView
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-//        Log.d("Elisha", "onCreate in MainActivity ${this.isChangingConfigurations}")
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
